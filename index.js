@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = "gemini-2.5-flash-lite";
+const MODEL = "gemini-2.5-flash";
 
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
