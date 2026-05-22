@@ -39,7 +39,7 @@ Output format:
 {
   "certainty": "high | medium | low",
   "quantity": "number | null",
-  "ai_reply_type": "no_reply | ask_confirmation | give_answer",
+  "ai_reply_type": "no_reply | ask_confirmation | Generate response based on reply",
   "ai_reply": "string | null"
 }
 
