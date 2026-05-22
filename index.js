@@ -18,12 +18,6 @@ app.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Message is required." });
   }
 
-  const inputPayload = {
-    task: "Check whether the reply clearly answered the preset question.",
-    preset: PRESET_QUESTION,
-    reply: message
-  };
-
   try {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
@@ -34,16 +28,14 @@ app.post("/chat", async (req, res) => {
           systemInstruction: {
             parts: [
               {
-                text: `You are an AI that analyzes customer replies.
-
-You will receive input in this exact JSON format:
+                text: `Input format:
 {
   "task": "Check whether the reply clearly answered the preset question.",
-  "preset": "the question that was asked to the customer",
-  "reply": "the customer's message"
+  "preset": "How many t-shirts do you want to buy?",
+  "reply": "customer message"
 }
 
-You must respond ONLY in this exact JSON format, no extra text, no markdown, no backticks:
+Output format:
 {
   "certainty": "high | medium | low",
   "quantity": "number | null",
@@ -51,22 +43,19 @@ You must respond ONLY in this exact JSON format, no extra text, no markdown, no 
   "ai_reply": "string | null"
 }
 
-Rules:
-- certainty "high" = customer clearly stated a number
-- certainty "medium" = customer implied a quantity but not clearly
-- certainty "low" = customer did not answer or answer is unclear
-- quantity = extract the number if mentioned, otherwise null
-- ai_reply_type:
-    "no_reply" = certainty is high, no need to ask again
-    "ask_confirmation" = certainty is medium, confirm the number
-    "give_answer" = certainty is low, ask the preset question again politely
-- ai_reply = the message to send back to the customer, or null if no_reply`
+Respond ONLY in the output format. No extra text.`
               }
             ]
           },
           contents: [
             {
-              parts: [{ text: JSON.stringify(inputPayload) }]
+              parts: [{
+                text: JSON.stringify({
+                  task: "Check whether the reply clearly answered the preset question.",
+                  preset: PRESET_QUESTION,
+                  reply: message
+                })
+              }]
             }
           ]
         })
@@ -80,18 +69,16 @@ Rules:
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
-      parsed = { error: "Failed to parse Gemini response.", raw };
+      parsed = { error: "Parse failed", raw };
     }
 
     res.json(parsed);
 
   } catch (err) {
-    console.error("Gemini API error:", err);
-    res.status(500).json({ error: "Failed to contact Gemini API." });
+    console.error(err);
+    res.status(500).json({ error: "Gemini API failed." });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Lisine backend running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Lisine running on port ${PORT}`));
