@@ -6,8 +6,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = "gemini-2.5-flash";
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const MODEL = "llama-3.3-70b-versatile";
 
 const PRESET_QUESTION = "How many t-shirts do you want to buy?";
 
@@ -20,15 +20,19 @@ app.post("/chat", async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      `https://api.groq.com/openai/v1/chat/completions`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GROQ_API_KEY}`
+        },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [
-              {
-                text: `Input format:
+          model: MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `Input format:
 {
   "task": "Check whether the reply clearly answered the preset question.",
   "preset": "How many t-shirts do you want to buy?",
@@ -44,18 +48,14 @@ Output format:
 }
 
 Respond ONLY in the output format. No extra text.`
-              }
-            ]
-          },
-          contents: [
+            },
             {
-              parts: [{
-                text: JSON.stringify({
-                  task: "Check whether the reply clearly answered the preset question.",
-                  preset: PRESET_QUESTION,
-                  reply: message
-                })
-              }]
+              role: "user",
+              content: JSON.stringify({
+                task: "Check whether the reply clearly answered the preset question.",
+                preset: PRESET_QUESTION,
+                reply: message
+              })
             }
           ]
         })
@@ -63,7 +63,7 @@ Respond ONLY in the output format. No extra text.`
     );
 
     const data = await response.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    const raw = data?.choices?.[0]?.message?.content || "{}";
 
     let parsed;
     try {
@@ -76,7 +76,7 @@ Respond ONLY in the output format. No extra text.`
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Gemini API failed." });
+    res.status(500).json({ error: "Groq API failed." });
   }
 });
 
