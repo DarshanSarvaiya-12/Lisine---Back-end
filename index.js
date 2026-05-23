@@ -34,16 +34,15 @@ app.post("/chat", async (req, res) => {
               role: "system",
               content: `Input format:
 {
-  "task": "Check whether the reply clearly answered the preset question.",
   "preset": "How many t-shirts do you want to buy?",
   "reply": "customer message"
 }
 
 Output format:
-{ 
-  "certainty": "high | medium | low",
+{
+  "mode": "preset | general",
+  "certainty": "high | medium | low | null",
   "quantity": "number | null",
-  "ai_reply_type": "no_reply | ask_confirmation | Generate response based on reply",
   "ai_reply": "string | null"
 }
 
@@ -52,7 +51,6 @@ Respond ONLY in the output format. No extra text.`
             {
               role: "user",
               content: JSON.stringify({
-                task: "Check whether the reply clearly answered the preset question.",
                 preset: PRESET_QUESTION,
                 reply: message
               })
