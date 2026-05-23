@@ -34,14 +34,13 @@ app.post("/chat", async (req, res) => {
               role: "system",
               content: `Input format:
 {
-  "task": "Check whether the reply clearly answered the preset question.",
+  "task": "If reply is related to preset question check certainty else answer the reply",
   "preset": "How many t-shirts do you want to buy?",
   "reply": "customer message"
 }
 
 Output format:
 {
-  "intent": "string" 
   "certainty": "high | medium | low",
   "quantity": "number | null",
   "ai_reply_type": "no_reply | ask_confirmation | Generate response based on reply",
