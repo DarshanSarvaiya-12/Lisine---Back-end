@@ -6,8 +6,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const MODEL = "llama-3.3-70b-versatile";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const MODEL = "gemini-2.5-flash";
 
 const PRESET_QUESTION = "How many t-shirts do you want to buy?";
 
@@ -18,44 +18,55 @@ app.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Message is required." });
   }
 
+  const inputPayload = {
+    task: "Check whether the reply clearly answered the preset question.",
+    preset: PRESET_QUESTION,
+    reply: message
+  };
+
   try {
     const response = await fetch(
-      `https://api.groq.com/openai/v1/chat/completions`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: MODEL,
-          messages: [
-            {
-              role: "system",
-              content: `Input format:
+          systemInstruction: {
+            parts: [
+              {
+                text: `You are an AI that analyzes customer replies.
+
+You will receive input in this exact JSON format:
 {
-  "task": "If reply is related to preset question check certainty else answer the reply",
-  "preset": "How many t-shirts do you want to buy?",
-  "reply": "customer message"
+  "task": "Check whether the reply clearly answered the preset question.",
+  "preset": "the question that was asked to the customer",
+  "reply": "the customer's message"
 }
 
-Output format:
+You must respond ONLY in this exact JSON format, no extra text, no markdown, no backticks:
 {
   "certainty": "high | medium | low",
   "quantity": "number | null",
-  "ai_reply_type": "no_reply | ask_confirmation | Generate response based on reply",
+  "ai_reply_type": "no_reply | ask_confirmation | give_answer",
   "ai_reply": "string | null"
 }
 
-Respond ONLY in the output format. No extra text.`
-            },
+Rules:
+- certainty "high" = customer clearly stated a number
+- certainty "medium" = customer implied a quantity but not clearly
+- certainty "low" = customer did not answer or answer is unclear
+- quantity = extract the number if mentioned, otherwise null
+- ai_reply_type:
+    "no_reply" = certainty is high, no need to ask again
+    "ask_confirmation" = certainty is medium, confirm the number
+    "give_answer" = certainty is low, ask the preset question again politely
+- ai_reply = the message to send back to the customer, or null if no_reply`
+              }
+            ]
+          },
+          contents: [
             {
-              role: "user",
-              content: JSON.stringify({
-                task: "Check whether the reply clearly answered the preset question.",
-                preset: PRESET_QUESTION,
-                reply: message
-              })
+              parts: [{ text: JSON.stringify(inputPayload) }]
             }
           ]
         })
@@ -63,22 +74,24 @@ Respond ONLY in the output format. No extra text.`
     );
 
     const data = await response.json();
-    const raw = data?.choices?.[0]?.message?.content || "{}";
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
 
     let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch (e) {
-      parsed = { error: "Parse failed", raw };
+      parsed = { error: "Failed to parse Gemini response.", raw };
     }
 
     res.json(parsed);
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Groq API failed." });
+    console.error("Gemini API error:", err);
+    res.status(500).json({ error: "Failed to contact Gemini API." });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Lisine running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Lisine backend running on port ${PORT}`);
+});
