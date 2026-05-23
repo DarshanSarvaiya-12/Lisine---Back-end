@@ -41,7 +41,8 @@ app.post("/chat", async (req, res) => {
 Output format:
 {
   "mode": "preset | general",
-  "certainty": "high | medium | low | null",
+  "certainty": "high | medium | null",
+  "ai_reply_type": "okay | ask_confirmation | answer to customer",
   "quantity": "number | null",
   "ai_reply": "string | null"
 }
