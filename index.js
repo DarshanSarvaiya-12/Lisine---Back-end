@@ -41,6 +41,7 @@ app.post("/chat", async (req, res) => {
 
 Output format:
 {
+  "intent": "string" 
   "certainty": "high | medium | low",
   "quantity": "number | null",
   "ai_reply_type": "no_reply | ask_confirmation | Generate response based on reply",
