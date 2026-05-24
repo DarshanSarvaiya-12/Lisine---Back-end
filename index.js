@@ -10,6 +10,7 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const MODEL = "llama-3.3-70b-versatile";
 
 app.post("/chat", async (req, res) => {
+  // Destructure 'preset' and 'reply' from the incoming request body
   const { preset, reply } = req.body;
 
   if (!reply || !preset) {
@@ -27,26 +28,30 @@ app.post("/chat", async (req, res) => {
         },
         body: JSON.stringify({
           model: MODEL,
-          temperature: 0, // Lower temperature makes the model much more precise and strict
           messages: [
             {
               role: "system",
-              content: `Instruction: Check if the customer reply directly answers the preset question.
+              content: `You are a validation assistant for a t-shirt e-commerce chatbot.
+Your job is to analyze if the customer's reply actually answers the preset question asked by the system.
 
 Input format:
 {
-  "preset": "How many t-shirt do you want to buy ?",
-  "reply": "customer response string"
+  "preset": "The question asked by the bot",
+  "reply": "The customer's response"
 }
 
 Output format:
 {
-  "is_answered": "Yes | No"
-}`
+  "is_answered": "Yes" | "No"
+}
+
             },
             {
               role: "user",
-              content: JSON.stringify({ preset, reply })
+              content: JSON.stringify({
+                preset: preset,
+                reply: reply
+              })
             }
           ]
         })
@@ -56,11 +61,6 @@ Output format:
     const data = await response.json();
     const raw = data?.choices?.[0]?.message?.content || "{}";
 
-    // Extract raw token usage statistics from Groq API
-    const promptTokens = data?.usage?.prompt_tokens || 0;
-    const completionTokens = data?.usage?.completion_tokens || 0;
-    const totalTokens = data?.usage?.total_tokens || 0;
-
     let parsed;
     try {
       parsed = JSON.parse(raw);
@@ -68,15 +68,7 @@ Output format:
       parsed = { error: "Parse failed", raw };
     }
 
-    // Merge the AI's answer with the real-time token tracking data
-    res.json({
-      ...parsed,
-      token_usage: {
-        input_tokens: promptTokens,
-        output_tokens: completionTokens,
-        total_tokens: totalTokens
-      }
-    });
+    res.json(parsed);
 
   } catch (err) {
     console.error(err);
