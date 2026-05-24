@@ -41,10 +41,13 @@ Input format:
 
 Output format:
 {
-  "Is Reply answer the Preset ?": "Yes / No"
+  "Is Reply answer the Preset ?",
+"certainity":"high | medium | null",
+if,high > Yes 
+else,> No
 }
 
-Respond ONLY in the output format. No extra text.`
+Respond ONLY in the output format. No extra text.
             },
             {
               role: "user",
