@@ -10,9 +10,9 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const MODEL = "llama-3.3-70b-versatile";
 
 app.post("/chat", async (req, res) => {
-  const { preset, reply } = req.body;
+  const { Preset, Reply } = req.body;
 
-  if (!reply) {
+  if (!Reply) {
     return res.status(400).json({ error: "Message is required." });
   }
 
@@ -49,8 +49,8 @@ Respond ONLY in the output format. No extra text.`
             {
               role: "user",
               content: JSON.stringify({
-                Preset: preset,
-                Reply: reply
+                Preset: Preset,
+                Reply: Reply
               })
             }
           ]
@@ -68,7 +68,6 @@ Respond ONLY in the output format. No extra text.`
       parsed = { error: "Parse failed", raw };
     }
 
-    // Returning the AI's response alongside total token counts
     res.json({
       ...parsed,
       usage: {
