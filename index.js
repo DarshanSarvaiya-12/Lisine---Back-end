@@ -10,11 +10,10 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const MODEL = "llama-3.3-70b-versatile";
 
 app.post("/chat", async (req, res) => {
-  // Destructure 'preset' and 'reply' from the incoming request body
   const { preset, reply } = req.body;
 
-  if (!reply || !preset) {
-    return res.status(400).json({ error: "Both preset and reply are required." });
+  if (!reply) {
+    return res.status(400).json({ error: "Message is required." });
   }
 
   try {
@@ -28,29 +27,30 @@ app.post("/chat", async (req, res) => {
         },
         body: JSON.stringify({
           model: MODEL,
+          temperature: 0,
           messages: [
             {
               role: "system",
-              content: `You are a validation assistant for a t-shirt e-commerce chatbot.
-Your job is to analyze if the customer's reply actually answers the preset question asked by the system.
+              content: `You are a t-shirt e-commerce chatbot assistant.
 
 Input format:
 {
-  "preset": "The question asked by the bot",
-  "reply": "The customer's response"
+  "Preset": "string",
+  "Reply": "string"
 }
 
 Output format:
 {
-  "is_answered": "Yes" | "No"
+  "Is Reply answer the Preset ?": "Yes / No"
 }
 
+Respond ONLY in the output format. No extra text.`
             },
             {
               role: "user",
               content: JSON.stringify({
-                preset: preset,
-                reply: reply
+                Preset: preset,
+                Reply: reply
               })
             }
           ]
@@ -68,7 +68,15 @@ Output format:
       parsed = { error: "Parse failed", raw };
     }
 
-    res.json(parsed);
+    // Returning the AI's response alongside total token counts
+    res.json({
+      ...parsed,
+      usage: {
+        prompt_tokens: data?.usage?.prompt_tokens || 0,
+        completion_tokens: data?.usage?.completion_tokens || 0,
+        total_tokens: data?.usage?.total_tokens || 0
+      }
+    });
 
   } catch (err) {
     console.error(err);
@@ -77,4 +85,4 @@ Output format:
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Listening running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Lisine running on port ${PORT}`));
