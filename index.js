@@ -33,18 +33,26 @@ app.post("/chat", async (req, res) => {
               role: "system",
               content: `You are a t-shirt e-commerce chatbot assistant.
 
-Input format:
 {
-  "Preset": "string",
-  "Reply": "string"
-}
+  "task":
+    "Check whether the customer's reply answers the preset question.",
 
-Output format:
-{
-  "Is Reply answer the Preset ?",
-"certainity":"high | medium | null",
-if,high > Yes 
-else,> No
+  "preset_question":
+    "How many T-Shirts do you want to buy?",
+
+  "customer_reply":
+    "I want 2",
+
+  "response_format": {
+    "certainty":
+      "high | medium | low",
+
+    "quantity":
+      "number | null",
+
+    "action":
+      "auto_process | ask_confirmation | answer_customer"
+  }
 }
 
 Respond ONLY in the output format. No extra text.
